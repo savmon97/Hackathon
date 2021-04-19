@@ -71,9 +71,11 @@
     mutate(casePer1000 = round((cases*1000)/population,1)) %>% 
     select(c(1,10)) 
   
-  wearMask <- left_join(wearMask, covidCases, by = 'county') %>% 
-    left_join(results20, by = 'county')
+  
+  # wearMask <- left_join(wearMask, covidCases, by = 'county') %>% 
+  #   left_join(results20, by = 'county')
  
+  #adding factors for levels of likert scale
   wearMask$mask <- factor(wearMask$mask, 
                        levels = c("Every time",
                                   "Most of the time",
@@ -86,8 +88,10 @@
                                      "Not at all",
                                      "No answer"))
   
+  #including social distancing data by county for those who socially distance a lot
   socialDistance <- wearMask %>% filter(psd == 'Very much' & mask != "No answer")
   
+  #filtering to isolate those who wear masks every or most of the time
   wearMask <- wearMask %>% filter(
     (mask == "Every time" | mask == "Most of the time") & 
       is.na(psd) == FALSE &
