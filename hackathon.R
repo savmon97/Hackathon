@@ -3,19 +3,26 @@
   library(ggpubr)
 
 
-  #####Loading important data  
-    
-    #Johns Hopkins
+#------------------------------ 
+# Loading the necessary data
+# and making into tidy datasets
+#------------------------------
+  
+  #Johns Hopkins
   jh_covid <- as_tibble(read.csv("CSVs/JohnsHopkinsCOVIDDataSept30.csv"))
-    #Election Results
+  
+  #Election Results
   e_results <- as_tibble(read.csv("CSVs/Combined20162020ElectionResults.csv"))
   e_results$won <- with(e_results, ifelse(e_results$dem.perc20 > 50.00, 1, 2))
   results20 <- select(e_results, c(2,3,5))
-    #ACS 5 year survey
+  
+  #ACS 5 year survey
   acs <- as_tibble(read.csv("CSVs/ACS5Year2014-2019.csv"))
-    #Survey Monkey
+  
+  #Survey Monkey
   smData <- as_tibble(read.csv("CSVs/SMData.csv"))
   
+  #isolating data of interest
   personal <- smData %>% select(county, 
                                 state, 
                                 SMDate, 
@@ -35,6 +42,8 @@
     summarize("selfReport" = n())
   selfEcon <- left_join(selfEcon, total_county) %>% 
     mutate(percent = round((selfReport/n)*100,1))
+  #SV Note: Decided not to look into this analysis as the time I had to do this
+  #would not be sufficient for a proper deep dive
   
   #separating values based on percent wears masks Never - Every Time
   wearMask <- personal %>% 
@@ -42,13 +51,20 @@
              'mask' = wear_mask_how_often,
              'psd' = practing_social_distancing) %>% 
     summarize("wears" = n()) 
+  
+  #adding total population by county to mask wearing data from survey monkey
   wearMask <- left_join(wearMask, total_county) %>% 
     mutate(percent = round((wears/n)*100,1))
   
   x <- group_by(wearMask, mask, percent) %>% 
     filter(percent == max(percent))
 
-  ### covid cases per 1000 people
+#----------------------------------------------------
+# Starting analysis of the data
+# focusing on whether we see a correlation between low mask 
+# wearing but 
+#----------------------------------------------------
+  #Calculating covid cases per 1000 people
   covidCases <- jh_covid %>% 
     left_join(acs, by = 'county') %>% 
     select(c(2,4,5,7,11,16,17,18,19),) %>% 
@@ -78,7 +94,11 @@
       psd != "No answer")
   
 
-  
+  #-------------------------------------------
+  # Making the maps using ggplot and exporting
+  # onto a pdf
+  #-------------------------------------------
+   
   analysis1 <- ggplot(mapping = aes(x = percent, y = casePer1000)) +
     geom_jitter(socialDistance,
                 mapping = aes(percent,casePer1000, color = factor(mask))) + 
